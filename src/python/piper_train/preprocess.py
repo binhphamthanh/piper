@@ -471,7 +471,7 @@ def biye_dataset(args: argparse.Namespace) -> Iterable[Utterance]:
                 speaker_id = 0
                 speaker = "biye"
 
-        txt_path = wav_path.replace("wav", "txt")
+        txt_path = os.path.join(dataset_dir, os.path.basename(wav_path).replace("wav", "txt"))
         if os.path.exists(txt_path):
             with open(txt_path, "r", encoding="utf-8") as file_text:
                 text = file_text.readlines()[0]
