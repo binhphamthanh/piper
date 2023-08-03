@@ -58,7 +58,7 @@ def main() -> None:
         help="Target sample rate for voice (hertz)",
     )
     parser.add_argument(
-        "--dataset-format", choices=("ljspeech", "mycroft"), required=True
+        "--dataset-format", choices=("ljspeech", "mycroft", "biye"), required=True
     )
     parser.add_argument("--cache-dir", help="Directory to cache processed audio files")
     parser.add_argument("--max-workers", type=int)
@@ -118,6 +118,8 @@ def main() -> None:
 
     if args.dataset_format == "mycroft":
         make_dataset = mycroft_dataset
+    elif args.dataset_format == "biye":
+        make_dataset = biye_dataset
     else:
         make_dataset = ljspeech_dataset
 
@@ -450,6 +452,35 @@ def mycroft_dataset(args: argparse.Namespace) -> Iterable[Utterance]:
                         speaker_id=speaker_id if not is_single_speaker else None,
                     )
         speaker_id += 1
+
+
+def biye_dataset(args: argparse.Namespace) -> Iterable[Utterance]:
+    dataset_dir = args.input_dir
+    is_single_speaker = args.single_speaker
+    skip_audio = args.skip_audio
+
+    speaker_id = 0
+    speaker = "biye"
+    for wav_path in dataset_dir.glob("**/*.wav"):
+        wav_file_parts = os.path.basename(wav_path).split('_')
+        if len(wav_file_parts) > 1:
+            try:
+                speaker = wav_file_parts[0]
+                speaker_id = wav_file_parts[1]
+            except:
+                speaker_id = 0
+                speaker = "biye"
+
+        txt_path = wav_path.replace("wav", "txt")
+        if os.path.exists(txt_path):
+            with open(txt_path, "r", encoding="utf-8") as file_text:
+                text = file_text.readlines()[0]
+                yield Utterance(
+                    text=text,
+                    audio_path=wav_path,
+                    speaker=speaker if not is_single_speaker else None,
+                    speaker_id=speaker_id if not is_single_speaker else None,
+                )
 
 
 # -----------------------------------------------------------------------------
